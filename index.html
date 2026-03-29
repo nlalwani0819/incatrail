@@ -623,6 +623,22 @@
   .p-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; position: relative; }
   .p-note { font-size: 11px; color: var(--dim); margin-top: 10px; font-style: italic; line-height: 1.5; position: relative; }
 
+  .meal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: normal;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .meal-item:last-child { border-bottom: none; }
+  .meal-time { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 10px; min-width: 60px; }
+  .meal-desc { flex: 1; margin: 0 8px; }
+  .meal-protein { color: var(--green-bright); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
   .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
   .tip {
     background: var(--surface);
@@ -868,10 +884,10 @@
   <!-- NUTRITION -->
   <div class="tab-content hidden" id="tab-nutrition">
     <div class="protein-hero">
-      <div class="p-num">90<span>g floor</span></div>
-      <div class="p-stretch">↑ 112g stretch goal</div>
+      <div class="p-num" id="protein-today">0<span>g today</span></div>
+      <div class="p-stretch">↑ 90g floor · 112g stretch</div>
       <div class="p-sub">140 lbs · Trail Training · Be realistic</div>
-      <div class="p-note">Getting to 90g consistently is a real win. Build from there.</div>
+      <div id="meal-list" class="p-note"></div>
     </div>
 
     <div class="tips-grid">
@@ -1053,6 +1069,62 @@ let coachMessages = [];
 let nutritionMessages = [];
 let pendingPhoto = null;
 
+// ── Meal Log (24-hour persistence) ────────────────────────────
+function getMealLog() {
+  const stored = JSON.parse(localStorage.getItem('incaMeals') || '{"date":"","meals":[]}');
+  const todayStr = getToday().toISOString().slice(0, 10);
+  // Reset if it's a new day
+  if (stored.date !== todayStr) {
+    const fresh = { date: todayStr, meals: [] };
+    localStorage.setItem('incaMeals', JSON.stringify(fresh));
+    return fresh;
+  }
+  return stored;
+}
+
+function addMeal(description, estimatedProtein) {
+  const log = getMealLog();
+  log.meals.push({
+    time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    description,
+    protein: estimatedProtein
+  });
+  localStorage.setItem('incaMeals', JSON.stringify(log));
+}
+
+function getMealSummaryForPrompt() {
+  const log = getMealLog();
+  if (log.meals.length === 0) return 'No meals logged yet today.';
+  let total = 0;
+  const lines = log.meals.map(m => {
+    total += (m.protein || 0);
+    return `• ${m.time}: ${m.description} (~${m.protein || '?'}g protein)`;
+  });
+  return `TODAY'S MEALS SO FAR (${total}g protein total):\n${lines.join('\n')}`;
+}
+
+function updateMealSummaryUI() {
+  const log = getMealLog();
+  const totalProtein = log.meals.reduce((sum, m) => sum + (m.protein || 0), 0);
+
+  // Update the big number
+  const numEl = document.getElementById('protein-today');
+  if (numEl) numEl.innerHTML = `${totalProtein}<span>g today</span>`;
+
+  // Update the meal list
+  const listEl = document.getElementById('meal-list');
+  if (!listEl) return;
+
+  if (log.meals.length === 0) {
+    listEl.innerHTML = '<div style="font-style:italic;color:var(--dim);">No meals logged yet today. Tell me what you ate!</div>';
+    return;
+  }
+
+  listEl.innerHTML = log.meals.map(m =>
+    `<div class="meal-item"><span class="meal-time">${m.time}</span><span class="meal-desc">${m.description}</span><span class="meal-protein">${m.protein}g</span></div>`
+  ).join('');
+}
+
 // ── API Key ────────────────────────────────────────────────────
 function getApiKey() {
   return localStorage.getItem('incaApiKey') || '';
@@ -1124,6 +1196,7 @@ function initApp() {
   renderLog();
   seedCoachChat(ph, wk);
   seedNutritionChat();
+  updateMealSummaryUI();
 }
 
 function updateLastSession() {
@@ -1143,7 +1216,15 @@ function seedCoachChat(ph, wk) {
 }
 
 function seedNutritionChat() {
-  nutritionMessages = [{ role: 'assistant', content: "Hey Neha 👋 Tell me what you've eaten today — describe it or snap a photo — and I'll estimate your protein, flag any gaps, and suggest one easy thing to add. No judgment, just numbers." }];
+  const log = getMealLog();
+  let greeting;
+  if (log.meals.length > 0) {
+    const total = log.meals.reduce((s, m) => s + (m.protein || 0), 0);
+    greeting = `**Welcome back.** You've logged **${total}g protein** so far today across ${log.meals.length} meal${log.meals.length > 1 ? 's' : ''}. Tell me what else you've eaten — or snap a photo — and I'll update your running total.`;
+  } else {
+    greeting = "Hey Neha 👋 Tell me what you've eaten today — describe it or snap a photo — and I'll estimate your protein, flag any gaps, and suggest one easy thing to add. No judgment, just numbers.";
+  }
+  nutritionMessages = [{ role: 'assistant', content: greeting }];
   renderChat('nut-chat', nutritionMessages);
 }
 
@@ -1241,12 +1322,19 @@ function buildCoachSystemPrompt() {
   const last = workoutLog[workoutLog.length - 1];
   const stairmasterMin = Math.min(10 + (wk - 1) * 2, 30);
 
+  // Build recent session history (last 10)
+  const recentSessions = workoutLog.slice(-10).map(s =>
+    `${s.date} | ${s.type}${s.energy ? ` | Energy ${s.energy}/5` : ''}${s.notes ? ` | "${s.notes}"` : ''}`
+  ).join('\n');
+
   return `You are Neha's personal AI trainer for the 47km Inca Trail hike to Machu Picchu (June 3, 2026). She is 38, 140 lbs, 5'5.5", at a full commercial gym in NYC.
 
 SCHEDULE: 2 gym days/week — Day A (Lower Body) and Day B (Full Body + Core). Weekends she hikes outdoors. Other days: yoga, running. Intentional cross-training.
 
 STATUS: Week ${wk} of 13 · Phase: ${ph.name} · ${getDaysLeft()} days to hike
-Last workout: ${last.type} on ${last.date}${last.energy ? ` (energy ${last.energy}/5)` : ''}${last.notes ? ` — "${last.notes}"` : ''}
+
+RECENT SESSIONS (last ${Math.min(10, workoutLog.length)}):
+${recentSessions}
 
 RULES:
 1. ALWAYS open with 5-min ab circuit (3x15 crunches, 3x20 bicycle kicks, 2x30s plank). Non-negotiable.
@@ -1256,12 +1344,26 @@ RULES:
 5. Heavier weights than typical prescriptions — she can handle it.
 6. End every workout: "Done? → Log it in the Log tab 📋"
 7. Direct, motivating, trail-focused.
+8. If she's been skipping Day A or Day B, call it out. Track alternation.
+9. If energy has been trending low, suggest recovery or lighter modifications.
 
 DAY A: Squats, lunges, leg press, step-ups, hip hinges, glute work + stairmaster
 DAY B: Deadlifts, rows, goblet squats, farmer carries, core + stairmaster`;
 }
 
-const NUTRITION_SYSTEM_PROMPT = `You are Neha's nutrition coach for Inca Trail prep. She is 140 lbs, 5'5.5". Protein floor: 90g/day. Stretch: 112g. She eats Indian food, lives in NYC, food-motivated but busy. Analyze what she eats (from text or photo), estimate protein with specific numbers, identify the biggest gap, suggest ONE practical thing to add. 3-4 sentences max. Direct, non-judgmental, use numbers.`;
+function buildNutritionSystemPrompt() {
+  const mealSummary = getMealSummaryForPrompt();
+  return `You are Neha's nutrition coach for Inca Trail prep. She is 140 lbs, 5'5.5". Protein floor: 90g/day. Stretch: 112g. She eats Indian food, lives in NYC, food-motivated but busy.
+
+${mealSummary}
+
+RULES:
+1. When she tells you what she ate, estimate protein with specific numbers.
+2. ALWAYS end your response with a line in this exact format: [MEAL_LOG: description | Xg protein] — where description is a short summary of what she ate and X is your protein estimate. This line is parsed by the app to track her daily total. If she's just asking a question and not reporting a meal, skip this line.
+3. Keep running context of today's meals above. Reference her cumulative total.
+4. Identify the biggest protein gap and suggest ONE practical thing to add.
+5. 3-4 sentences max. Direct, non-judgmental, use numbers.`;
+}
 
 async function callAPI(messages, systemPrompt) {
   const apiKey = getApiKey();
@@ -1349,10 +1451,22 @@ async function sendMsg(type) {
   showTyping(chatId);
 
   try {
-    const reply = await callAPI(msgs, isCoach ? buildCoachSystemPrompt() : NUTRITION_SYSTEM_PROMPT);
+    const reply = await callAPI(msgs, isCoach ? buildCoachSystemPrompt() : buildNutritionSystemPrompt());
     removeTyping(chatId);
-    msgs.push({ role: 'assistant', content: reply });
-    appendMessage(container, 'assistant', reply);
+
+    // Parse meal log from nutrition responses
+    let displayReply = reply;
+    if (!isCoach) {
+      const mealMatch = reply.match(/\[MEAL_LOG:\s*(.+?)\s*\|\s*(\d+)g\s*protein\]/);
+      if (mealMatch) {
+        addMeal(mealMatch[1], parseInt(mealMatch[2]));
+        displayReply = reply.replace(/\[MEAL_LOG:.*?\]/, '').trim();
+        updateMealSummaryUI();
+      }
+    }
+
+    msgs.push({ role: 'assistant', content: displayReply });
+    appendMessage(container, 'assistant', displayReply);
   } catch (e) {
     removeTyping(chatId);
     const errMsg = e.message === 'Invalid API key'
