@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inca Trail">
+<meta name="theme-color" content="#0d1a12">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230d1a12' width='100' height='100' rx='22'/><text y='68' x='50' text-anchor='middle' font-size='52'>🏔️</text></svg>">
+<title>Inca Trail</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a1410;
+    --surface: #111e16;
+    --surface2: #182a1f;
+    --surface3: #1f3528;
+    --border: #243329;
+    --border-light: #2e4436;
+    --green: #4a9463;
+    --green-light: #6ab87d;
+    --green-bright: #86efac;
+    --green-glow: rgba(134, 239, 172, 0.08);
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --gold-glow: rgba(232, 201, 106, 0.06);
+    --red: #e07070;
+    --teal: #6ab8b8;
+    --text: #e8f0ea;
+    --text-secondary: #b8ccbe;
+    --muted: #7a9a82;
+    --dim: #4a6450;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-xs: 7px;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* ── SETUP SCREEN ─────────────────────────────────────── */
+  .setup-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 28px;
+    text-align: center;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .setup-overlay.hidden { display: none; }
+
+  .setup-icon { font-size: 56px; margin-bottom: 16px; }
+  .setup-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--green-bright);
+    margin-bottom: 6px;
+  }
+  .setup-sub {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 320px;
+  }
+
+  .setup-input {
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+  }
+  .setup-input:focus { border-color: var(--green); }
+  .setup-input::placeholder { color: var(--dim); }
+
+  .setup-btn {
+    width: 100%;
+    max-width: 360px;
+    padding: 14px;
+    background: var(--green);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.15s;
+  }
+  .setup-btn:active { opacity: 0.85; }
+
+  .setup-hint {
+    font-size: 11px;
+    color: var(--dim);
+    margin-top: 16px;
+    line-height: 1.5;
+    max-width: 320px;
+  }
+  .setup-hint a { color: var(--gold); text-decoration: none; }
+
+  .setup-error {
+    color: var(--red);
+    font-size: 12px;
+    margin-bottom: 10px;
+    display: none;
+  }
+
+  /* ── HEADER ───────────────────────────────────────────── */
+  .header {
+    padding: calc(var(--safe-top) + 16px) 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-shrink: 0;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 10px; }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green-bright);
+    letter-spacing: -0.3px;
+  }
+
+  .header .sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  .settings-btn {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    margin-top: 2px;
+  }
+
+  .countdown {
+    background: linear-gradient(135deg, var(--surface2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    text-align: right;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .countdown::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--gold-glow), transparent);
+    pointer-events: none;
+  }
+
+  .countdown .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gold-light);
+    line-height: 1;
+    position: relative;
+  }
+
+  .countdown .lbl {
+    font-size: 8px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    position: relative;
+  }
+
+  /* ── PHASE BAR ────────────────────────────────────────── */
+  .phase-wrap { padding: 14px 20px 0; flex-shrink: 0; }
+
+  .phase-bar { display: flex; gap: 3px; height: 5px; }
+
+  .phase-seg {
+    flex: 1;
+    border-radius: 3px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .phase-seg.done { background: var(--dim); }
+  .phase-seg.active {
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(74, 148, 99, 0.4);
+  }
+
+  .phase-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+  }
+
+  .phase-labels span {
+    font-size: 9px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .phase-labels .cur { color: var(--green-light); font-weight: 500; }
+
+  /* ── TABS ──────────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    margin: 14px 20px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 9px 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--green-bright);
+    border: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  /* ── SCROLL CONTENT ───────────────────────────────────── */
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 20px calc(var(--safe-bottom) + 20px);
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* ── CARDS ─────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  /* ── LAST SESSION ─────────────────────────────────────── */
+  .last-session {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .ls-icon {
+    width: 38px; height: 38px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+
+  .ls-info { flex: 1; min-width: 0; }
+  .ls-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ls-meta { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+
+  .ls-badge {
+    font-size: 9px;
+    background: linear-gradient(135deg, var(--green), #3d8054);
+    color: white;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  /* ── CHAT ──────────────────────────────────────────────── */
+  .chat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .msg { display: flex; gap: 8px; align-items: flex-start; animation: msgIn 0.25s ease; }
+  .msg.user { flex-direction: row-reverse; }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-av {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .msg.assistant .msg-av { background: var(--green); color: var(--bg); }
+  .msg.user .msg-av { background: var(--surface2); border: 1px solid var(--border); }
+
+  .msg-bub {
+    max-width: 85%;
+    padding: 10px 13px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .msg.assistant .msg-bub {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+  }
+
+  .msg.user .msg-bub {
+    background: linear-gradient(135deg, var(--green), #3d8054);
+    color: white;
+    font-weight: 500;
+    border-top-right-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  }
+
+  .msg-bub a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 2px; }
+  .msg-bub strong { color: var(--green-bright); }
+  .msg.user .msg-bub strong { color: white; }
+
+  /* ── TYPING ────────────────────────────────────────────── */
+  .typing { display: flex; gap: 5px; padding: 4px 0; align-items: center; }
+  .typing span {
+    width: 6px; height: 6px;
+    background: var(--muted); border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%,80%,100% { transform: translateY(0); opacity: 0.3; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* ── QUICK PROMPTS ────────────────────────────────────── */
+  .qps { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+
+  .qp {
+    font-size: 11px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .qp:active { background: var(--surface2); color: var(--green-light); border-color: var(--green); }
+
+  /* ── INPUT ROW ────────────────────────────────────────── */
+  .input-row { display: flex; gap: 8px; align-items: flex-end; }
+
+  .chat-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    resize: none;
+    outline: none;
+    max-height: 80px;
+    overflow-y: auto;
+    line-height: 1.4;
+    transition: border-color 0.2s;
+  }
+
+  .chat-input:focus { border-color: var(--green); }
+  .chat-input::placeholder { color: var(--dim); }
+
+  .send-btn {
+    width: 40px; height: 40px;
+    background: var(--green);
+    border: none; border-radius: var(--radius-sm);
+    color: var(--bg); font-size: 17px;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-weight: 700;
+  }
+
+  .send-btn:active { transform: scale(0.94); }
+  .send-btn:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+  /* ── LOG BANNER ───────────────────────────────────────── */
+  .log-banner {
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-top: 12px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .log-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--gold-glow), transparent);
+    pointer-events: none;
+  }
+
+  .log-banner .lbt { flex: 1; position: relative; }
+  .log-banner .lbt strong { display: block; font-size: 12px; color: var(--gold-light); }
+  .log-banner .lbt span { font-size: 11px; color: var(--muted); }
+  .log-banner .arr { color: var(--gold); font-size: 18px; position: relative; }
+
+  /* ── LOG TAB ──────────────────────────────────────────── */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--green-bright);
+    margin-bottom: 14px;
+  }
+
+  .session-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .s-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .s-dot.base { background: var(--green); }
+  .s-dot.load { background: var(--gold); }
+  .s-dot.peak { background: var(--red); }
+  .s-dot.taper { background: var(--teal); }
+
+  .s-info { flex: 1; min-width: 0; }
+  .s-name { font-size: 13px; font-weight: 500; }
+  .s-details { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+  .s-notes { font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-style: italic; line-height: 1.4; }
+  .s-date { font-size: 10px; color: var(--dim); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+
+  .log-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: 16px;
+  }
+  .log-form h3 { font-size: 14px; font-weight: 600; color: var(--green-light); margin-bottom: 14px; }
+
+  .form-row { margin-bottom: 12px; }
+  .form-label {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+  }
+
+  select, .log-form textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  select:focus, .log-form textarea:focus { border-color: var(--green); }
+  .log-form textarea { resize: vertical; min-height: 60px; }
+
+  .energy-row { display: flex; gap: 6px; }
+  .e-btn {
+    flex: 1; padding: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--muted); font-size: 13px;
+    cursor: pointer; text-align: center;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .e-btn:active { transform: scale(0.95); }
+  .e-btn.sel {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  .submit-btn {
+    width: 100%; padding: 12px;
+    background: var(--green); border: none;
+    border-radius: var(--radius-xs); color: var(--bg);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 14px;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.15s;
+  }
+  .submit-btn:active { opacity: 0.85; }
+
+  /* ── NUTRITION ────────────────────────────────────────── */
+  .protein-hero {
+    background: linear-gradient(145deg, #162b1e, #0e1f14);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    text-align: center;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .protein-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 20%, var(--green-glow), transparent 60%);
+    pointer-events: none;
+  }
+
+  .p-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px; font-weight: 700;
+    color: var(--green-bright); line-height: 1;
+    position: relative;
+  }
+  .p-num span { font-size: 18px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .p-stretch { font-size: 14px; color: var(--gold-light); margin-top: 5px; font-weight: 600; position: relative; }
+  .p-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; position: relative; }
+  .p-note { font-size: 11px; color: var(--dim); margin-top: 10px; font-style: italic; line-height: 1.5; position: relative; }
+
+  .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .tip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+  }
+  .tip-icon { font-size: 18px; margin-bottom: 4px; }
+  .tip-title { font-size: 11px; font-weight: 600; color: var(--green-light); }
+  .tip-text { font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+
+  .nut-label {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  /* ── PHOTO UPLOAD ─────────────────────────────────────── */
+  .photo-row { display: flex; gap: 8px; margin-bottom: 10px; }
+
+  .photo-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 13px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    flex: 1; justify-content: center;
+    transition: all 0.15s;
+  }
+  .photo-btn:active { border-color: var(--green); color: var(--green-light); }
+
+  .photo-preview {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    max-height: 180px;
+    object-fit: cover;
+    display: none;
+  }
+
+  #photo-input, #camera-input { display: none; }
+
+  /* ── REMINDERS ────────────────────────────────────────── */
+  .reminders {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 14px;
+  }
+  .reminders h3 { font-size: 13px; font-weight: 600; color: var(--gold-light); margin-bottom: 12px; }
+
+  .r-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .r-item:last-child { border-bottom: none; }
+  .r-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold); min-width: 52px; flex-shrink: 0; }
+  .r-body { flex: 1; }
+  .r-text { font-size: 12px; color: var(--text); line-height: 1.4; }
+  .r-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+  .r-tag { display: inline-block; font-size: 9px; padding: 2px 7px; border-radius: 10px; font-weight: 600; margin-left: 5px; vertical-align: middle; }
+
+  /* ── TOAST ─────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 30px);
+    left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: var(--bg);
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(74, 148, 99, 0.4);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── DELETE SESSION ───────────────────────────────────── */
+  .s-delete {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 6px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+    opacity: 0.6;
+  }
+  .s-delete:active { color: var(--red); opacity: 1; }
+
+  /* ── HIKES TAB ────────────────────────────────────────── */
+  .hike-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .hike-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .hike-details { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; line-height: 1.6; }
+  .hike-details span { color: var(--green-light); }
+
+  /* ── UTILITIES ────────────────────────────────────────── */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div class="setup-overlay" id="setup">
+  <div class="setup-icon">🏔️</div>
+  <div class="setup-title">Inca Trail Trainer</div>
+  <div class="setup-sub">Your AI training companion needs an API key to power the coach and nutrition chat. This key stays on your phone — it's never sent anywhere except directly to Anthropic.</div>
+  <div class="setup-error" id="setup-error">Invalid API key. It should start with sk-ant-</div>
+  <input class="setup-input" id="api-key-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off" autocapitalize="off" spellcheck="false">
+  <button class="setup-btn" onclick="saveApiKey()">Start Training →</button>
+  <div class="setup-hint">Get your key at <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a><br>It costs ~$0.01–0.03 per chat message.</div>
+</div>
+
+<div id="app" class="hidden">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="header-left">
+        <h1>🏔️ Inca Trail</h1>
+      </div>
+      <div class="sub" id="phase-sub">WEEK — · —</div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <div class="countdown">
+        <div class="num" id="countdown">—</div>
+        <div class="lbl">days left</div>
+      </div>
+      <button class="settings-btn" onclick="showSetup()" title="API Key Settings">⚙️</button>
+    </div>
+  </div>
+
+  <!-- PHASE BAR -->
+  <div class="phase-wrap">
+    <div class="phase-bar" id="phase-bar"></div>
+    <div class="phase-labels">
+      <span>Base</span>
+      <span class="cur" id="phase-cur">—</span>
+      <span>Taper</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('coach')">🧠 Coach</button>
+    <button class="tab-btn" onclick="switchTab('log')">📋 Log</button>
+    <button class="tab-btn" onclick="switchTab('nutrition')">🥗 Nutrition</button>
+    <button class="tab-btn" onclick="switchTab('hikes')">🥾 Hikes</button>
+  </div>
+
+  <!-- COACH -->
+  <div class="tab-content" id="tab-coach">
+    <div class="card last-session">
+      <div class="ls-icon">💪</div>
+      <div class="ls-info">
+        <div class="ls-name" id="ls-name">—</div>
+        <div class="ls-meta" id="ls-meta">—</div>
+      </div>
+      <div class="ls-badge">DONE ✓</div>
+    </div>
+
+    <div class="chat-box" id="coach-chat"></div>
+
+    <div class="qps">
+      <button class="qp" onclick="sendQuick('coach','Give me today\'s workout')">Today's workout</button>
+      <button class="qp" onclick="sendQuick('coach','Day A — Lower Body')">Day A</button>
+      <button class="qp" onclick="sendQuick('coach','Day B — Full Body + Core')">Day B</button>
+      <button class="qp" onclick="sendQuick('coach','Low energy today, modify the workout')">Low energy</button>
+    </div>
+
+    <div class="input-row">
+      <textarea class="chat-input" id="coach-input" placeholder="Ask for today's workout or tell me how you're feeling..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg('coach')}"
+        oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="coach-send" onclick="sendMsg('coach')">↑</button>
+    </div>
+
+    <div class="log-banner" onclick="switchTab('log')">
+      <div style="font-size:20px;position:relative">✍️</div>
+      <div class="lbt">
+        <strong>Done with your workout?</strong>
+        <span>Log it so your coach remembers next session →</span>
+      </div>
+      <div class="arr">›</div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="tab-content hidden" id="tab-log">
+    <div class="section-title">Workout History</div>
+    <div id="session-list"></div>
+
+    <div class="log-form">
+      <h3>+ Log Today's Session</h3>
+      <div class="form-row">
+        <label class="form-label">Session Type</label>
+        <select id="log-type">
+          <option>Day A — Lower Body</option>
+          <option>Day B — Full Body + Core</option>
+          <option>Outdoor Hike</option>
+          <option>Run</option>
+          <option>Yoga</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Energy Level</label>
+        <div class="energy-row">
+          <button class="e-btn" onclick="selEnergy(1)">1</button>
+          <button class="e-btn" onclick="selEnergy(2)">2</button>
+          <button class="e-btn" onclick="selEnergy(3)">3</button>
+          <button class="e-btn" onclick="selEnergy(4)">4</button>
+          <button class="e-btn" onclick="selEnergy(5)">5</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Notes (optional)</label>
+        <textarea id="log-notes" placeholder="What felt good? What was hard? Any PRs?"></textarea>
+      </div>
+      <button class="submit-btn" onclick="submitLog()">Log Session ✓</button>
+    </div>
+  </div>
+
+  <!-- NUTRITION -->
+  <div class="tab-content hidden" id="tab-nutrition">
+    <div class="protein-hero">
+      <div class="p-num">90<span>g floor</span></div>
+      <div class="p-stretch">↑ 112g stretch goal</div>
+      <div class="p-sub">140 lbs · Trail Training · Be realistic</div>
+      <div class="p-note">Getting to 90g consistently is a real win. Build from there.</div>
+    </div>
+
+    <div class="tips-grid">
+      <div class="tip"><div class="tip-icon">🌅</div><div class="tip-title">Morning 30g</div><div class="tip-text">Greek yogurt + 2–3 eggs before you leave</div></div>
+      <div class="tip"><div class="tip-icon">🏋️</div><div class="tip-title">Post-gym</div><div class="tip-text">Protein within 30 min. Shake, paneer ~20–25g</div></div>
+      <div class="tip"><div class="tip-icon">🥘</div><div class="tip-title">Indian</div><div class="tip-text">Dal + paneer + eggs = 60–70g. Dahi counts!</div></div>
+      <div class="tip"><div class="tip-icon">🍱</div><div class="tip-title">NYC grab</div><div class="tip-text">Chipotle chicken ~40g · Sweetgreen ~35g</div></div>
+    </div>
+
+    <div class="nut-label">📸 What did you eat today?</div>
+
+    <div class="photo-row">
+      <button class="photo-btn" onclick="document.getElementById('camera-input').click()">📷 Take Photo</button>
+      <button class="photo-btn" onclick="document.getElementById('photo-input').click()">🖼️ Upload</button>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+    <input type="file" id="photo-input" accept="image/*" onchange="handlePhoto(this)">
+    <img id="photo-preview" class="photo-preview" alt="Meal photo">
+
+    <div class="chat-box" id="nut-chat"></div>
+
+    <div class="input-row">
+      <textarea class="chat-input" id="nut-input" placeholder="Describe what you ate — dahi, poha, skipped lunch..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg('nut')}"
+        oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="nut-send" onclick="sendMsg('nut')">↑</button>
+    </div>
+
+    <div class="reminders">
+      <h3>⏰ Apple Reminders to Set</h3>
+      <div class="r-item">
+        <div class="r-time">7:30am</div>
+        <div class="r-body">
+          <div class="r-text">Protein check-in — floor is 90g today 💪 <span class="r-tag" style="background:#2a2010;color:#e8c96a">Nutrition</span></div>
+          <div class="r-sub">Daily · every day</div>
+        </div>
+      </div>
+      <div class="r-item">
+        <div class="r-time">8:00am</div>
+        <div class="r-body">
+          <div class="r-text">Take your supplements 💊 <span class="r-tag" style="background:#1a2535;color:#93c5fd">Supplement</span></div>
+          <div class="r-sub">Daily · with breakfast</div>
+        </div>
+      </div>
+      <div class="r-item">
+        <div class="r-time">11:30am</div>
+        <div class="r-body">
+          <div class="r-text">Fiber supplement before lunch 🌿 <span class="r-tag" style="background:#1a2535;color:#93c5fd">Supplement</span></div>
+          <div class="r-sub">Daily · 20–30 min before midday meal</div>
+        </div>
+      </div>
+      <div class="r-item">
+        <div class="r-time">12:30pm</div>
+        <div class="r-body">
+          <div class="r-text">Log your meals — how's protein? <span class="r-tag" style="background:#2a2010;color:#e8c96a">Nutrition</span></div>
+          <div class="r-sub">Daily · every day</div>
+        </div>
+      </div>
+      <div class="r-item">
+        <div class="r-time">7:00am</div>
+        <div class="r-body">
+          <div class="r-text">Gym day — Day A or B 🏔️ <span class="r-tag" style="background:#1e3a28;color:#6ab87d">Gym</span></div>
+          <div class="r-sub">2x/week · your gym days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIKES -->
+  <div class="tab-content hidden" id="tab-hikes">
+    <div class="section-title">Weekend Hike Options</div>
+    <div class="hike-card">
+      <div class="hike-name">Bull Hill / Mt. Taurus</div>
+      <div class="hike-details">
+        <span>4.2 mi</span> · ~950 ft gain · Moderate<br>
+        Hudson Highlands · Cold Spring, NY<br>
+        Great trail training — steep, rocky, river views
+      </div>
+    </div>
+    <div class="hike-card">
+      <div class="hike-name">Mount Beacon</div>
+      <div class="hike-details">
+        <span>3.8 mi</span> · ~1,000 ft gain · Moderate-Hard<br>
+        Beacon, NY · Metro-North accessible<br>
+        Fire tower summit, steep switchbacks
+      </div>
+    </div>
+    <div class="hike-card">
+      <div class="hike-name">Breakneck Ridge</div>
+      <div class="hike-details">
+        <span>3.7 mi</span> · ~1,250 ft gain · Hard<br>
+        Cold Spring, NY · Scrambling required<br>
+        Best quad/knee training for the Inca Trail
+      </div>
+    </div>
+    <div class="hike-card">
+      <div class="hike-name">Fishkill Ridge</div>
+      <div class="hike-details">
+        <span>6.5 mi</span> · ~1,500 ft gain · Hard<br>
+        Beacon, NY · Long loop option<br>
+        Closest simulation to Inca Trail distance + elevation
+      </div>
+    </div>
+    <div class="hike-card">
+      <div class="hike-name">Fort Tryon Park Loop</div>
+      <div class="hike-details">
+        <span>2–3 mi</span> · ~200 ft gain · Easy<br>
+        Hudson Heights · Your neighborhood<br>
+        Perfect for recovery days or quick hill work
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────
+const HIKE_DATE = new Date(2026, 5, 3); // June 3, 2026
+const PHASES = [
+  { name: 'Base Building',  key: 'base',  start: new Date(2026, 2, 8),  end: new Date(2026, 3, 4) },
+  { name: 'Load Capacity',  key: 'load',  start: new Date(2026, 3, 5),  end: new Date(2026, 4, 2) },
+  { name: 'Peak Intensity', key: 'peak',  start: new Date(2026, 4, 3),  end: new Date(2026, 4, 25) },
+  { name: 'Taper',          key: 'taper', start: new Date(2026, 4, 26), end: new Date(2026, 5, 2) },
+];
+const TOTAL_WEEKS = 13;
+const SEED_SESSIONS = [
+  { date: '2026-03-07', type: 'Day A — Lower Body',      phase: 'base', energy: 4, notes: 'Test run before official start. Went well.' },
+  { date: '2026-03-10', type: 'Day A — Lower Body',      phase: 'base', energy: null, notes: 'Week 1, Day 1. Official start.' },
+  { date: '2026-03-19', type: 'Day B — Full Body + Core', phase: 'base', energy: 4, notes: 'Energy 4/5, no soreness. Stairmaster emphasized. Week 1 complete.' },
+];
+
+// ── Helpers ────────────────────────────────────────────────────
+function getToday() {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+
+function getDaysLeft() {
+  return Math.max(0, Math.ceil((HIKE_DATE - getToday()) / 86400000));
+}
+
+function getCurrentPhaseIndex() {
+  const t = getToday();
+  for (let i = 0; i < PHASES.length; i++) {
+    if (t >= PHASES[i].start && t <= PHASES[i].end) return i;
+  }
+  return t < PHASES[0].start ? 0 : PHASES.length - 1;
+}
+
+function getCurrentWeek() {
+  const d = getToday() - PHASES[0].start;
+  return d < 0 ? 1 : Math.min(TOTAL_WEEKS, Math.floor(d / (7 * 86400000)) + 1);
+}
+
+function getWeekForDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00') - PHASES[0].start;
+  return d < 0 ? '—' : Math.min(TOTAL_WEEKS, Math.floor(d / (7 * 86400000)) + 1);
+}
+
+function daysAgo(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const diff = Math.floor((getToday() - d) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'yesterday';
+  return `${diff} days ago`;
+}
+
+function formatDate(dateStr) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ── State ──────────────────────────────────────────────────────
+let workoutLog = JSON.parse(localStorage.getItem('incaLog5') || 'null') || [...SEED_SESSIONS];
+let selectedEnergy = null;
+let coachMessages = [];
+let nutritionMessages = [];
+let pendingPhoto = null;
+
+// ── API Key ────────────────────────────────────────────────────
+function getApiKey() {
+  return localStorage.getItem('incaApiKey') || '';
+}
+
+function saveApiKey() {
+  const input = document.getElementById('api-key-input');
+  const key = input.value.trim();
+  const errorEl = document.getElementById('setup-error');
+
+  if (!key.startsWith('sk-ant-')) {
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  errorEl.style.display = 'none';
+  localStorage.setItem('incaApiKey', key);
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  initApp();
+}
+
+function showSetup() {
+  document.getElementById('api-key-input').value = getApiKey();
+  document.getElementById('setup-error').style.display = 'none';
+  document.getElementById('setup').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(message, duration = 2200) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+// ── Init ───────────────────────────────────────────────────────
+function boot() {
+  if (getApiKey()) {
+    document.getElementById('setup').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    initApp();
+  }
+}
+
+function initApp() {
+  const dl = getDaysLeft();
+  document.getElementById('countdown').textContent = dl;
+  const pi = getCurrentPhaseIndex();
+  const wk = getCurrentWeek();
+  const ph = PHASES[pi];
+
+  document.getElementById('phase-sub').textContent = `WEEK ${wk} · ${ph.name.toUpperCase()}`;
+  document.getElementById('phase-cur').textContent = ph.name;
+
+  // Phase bar
+  const bar = document.getElementById('phase-bar');
+  bar.innerHTML = '';
+  for (let i = 0; i < TOTAL_WEEKS; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'phase-seg';
+    if (i === wk - 1) seg.classList.add('active');
+    else if (i < wk - 1) seg.classList.add('done');
+    bar.appendChild(seg);
+  }
+
+  updateLastSession();
+  renderLog();
+  seedCoachChat(ph, wk);
+  seedNutritionChat();
+}
+
+function updateLastSession() {
+  const last = workoutLog[workoutLog.length - 1];
+  if (!last) return;
+  document.getElementById('ls-name').textContent = last.type;
+  document.getElementById('ls-meta').textContent =
+    `${formatDate(last.date)} · ${daysAgo(last.date)}${last.energy ? ` · Energy ${last.energy}/5` : ''}`;
+}
+
+// ── Coach Chat Seed ────────────────────────────────────────────
+function seedCoachChat(ph, wk) {
+  const last = workoutLog[workoutLog.length - 1];
+  const msg = `**Hey Neha.** ${getDaysLeft()} days to Machu Picchu.\n\nYou're in **Week ${wk} — ${ph.name}**. Last session: **${last.type}** (${daysAgo(last.date)}${last.energy ? `, energy ${last.energy}/5` : ''}).\n\nWhich gym day — **A (Lower Body)** or **B (Full Body + Core)** — and energy 1–5? Ab circuit comes first, always.`;
+  coachMessages = [{ role: 'assistant', content: msg }];
+  renderChat('coach-chat', coachMessages);
+}
+
+function seedNutritionChat() {
+  nutritionMessages = [{ role: 'assistant', content: "Hey Neha 👋 Tell me what you've eaten today — describe it or snap a photo — and I'll estimate your protein, flag any gaps, and suggest one easy thing to add. No judgment, just numbers." }];
+  renderChat('nut-chat', nutritionMessages);
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+function switchTab(name) {
+  const tabs = ['coach', 'log', 'nutrition', 'hikes'];
+  tabs.forEach((t, i) => {
+    const el = document.getElementById('tab-' + t);
+    if (el) {
+      if (t === name) el.classList.remove('hidden');
+      else el.classList.add('hidden');
+      el.style.display = t === name ? 'block' : '';
+    }
+    const btns = document.querySelectorAll('.tab-btn');
+    if (btns[i]) btns[i].classList.toggle('active', t === name);
+  });
+  if (name === 'log') renderLog();
+}
+
+// ── Chat Rendering ─────────────────────────────────────────────
+function renderChat(containerId, msgs) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  msgs.forEach(m => appendMessage(c, m.role, m.content, m.imageUrl));
+  c.scrollTop = c.scrollHeight;
+}
+
+function appendMessage(container, role, text, imageUrl) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = role === 'assistant' ? (container.id === 'nut-chat' ? '🥗' : '🏔️') : '✌️';
+
+  const bub = document.createElement('div');
+  bub.className = 'msg-bub';
+
+  if (imageUrl) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.style.cssText = 'width:100%;border-radius:8px;margin-bottom:6px;display:block;';
+    bub.appendChild(img);
+  }
+
+  const textNode = document.createElement('span');
+  textNode.innerHTML = formatMarkdown(text);
+  bub.appendChild(textNode);
+
+  div.appendChild(av);
+  div.appendChild(bub);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping(containerId) {
+  const c = document.getElementById(containerId);
+  const existing = document.getElementById('typing-' + containerId);
+  if (existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.id = 'typing-' + containerId;
+
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = containerId === 'nut-chat' ? '🥗' : '🏔️';
+
+  const bub = document.createElement('div');
+  bub.className = 'msg-bub';
+  bub.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+
+  div.appendChild(av);
+  div.appendChild(bub);
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+}
+
+function removeTyping(containerId) {
+  const el = document.getElementById('typing-' + containerId);
+  if (el) el.remove();
+}
+
+function formatMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]*?)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\n/g, '<br>');
+}
+
+// ── API ────────────────────────────────────────────────────────
+function buildCoachSystemPrompt() {
+  const wk = getCurrentWeek();
+  const ph = PHASES[getCurrentPhaseIndex()];
+  const last = workoutLog[workoutLog.length - 1];
+  const stairmasterMin = Math.min(10 + (wk - 1) * 2, 30);
+
+  return `You are Neha's personal AI trainer for the 47km Inca Trail hike to Machu Picchu (June 3, 2026). She is 38, 140 lbs, 5'5.5", at a full commercial gym in NYC.
+
+SCHEDULE: 2 gym days/week — Day A (Lower Body) and Day B (Full Body + Core). Weekends she hikes outdoors. Other days: yoga, running. Intentional cross-training.
+
+STATUS: Week ${wk} of 13 · Phase: ${ph.name} · ${getDaysLeft()} days to hike
+Last workout: ${last.type} on ${last.date}${last.energy ? ` (energy ${last.energy}/5)` : ''}${last.notes ? ` — "${last.notes}"` : ''}
+
+RULES:
+1. ALWAYS open with 5-min ab circuit (3x15 crunches, 3x20 bicycle kicks, 2x30s plank). Non-negotiable.
+2. Warm-up AND cool-down: 5 min MAX each.
+3. Stairmaster: ${stairmasterMin} min this week (increases 2 min/week, caps at 30)
+4. Every exercise: YouTube link https://www.youtube.com/results?search_query=how+to+[exercise]+proper+form
+5. Heavier weights than typical prescriptions — she can handle it.
+6. End every workout: "Done? → Log it in the Log tab 📋"
+7. Direct, motivating, trail-focused.
+
+DAY A: Squats, lunges, leg press, step-ups, hip hinges, glute work + stairmaster
+DAY B: Deadlifts, rows, goblet squats, farmer carries, core + stairmaster`;
+}
+
+const NUTRITION_SYSTEM_PROMPT = `You are Neha's nutrition coach for Inca Trail prep. She is 140 lbs, 5'5.5". Protein floor: 90g/day. Stretch: 112g. She eats Indian food, lives in NYC, food-motivated but busy. Analyze what she eats (from text or photo), estimate protein with specific numbers, identify the biggest gap, suggest ONE practical thing to add. 3-4 sentences max. Direct, non-judgmental, use numbers.`;
+
+async function callAPI(messages, systemPrompt) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    showSetup();
+    throw new Error('No API key');
+  }
+
+  const apiMessages = messages.map(m => {
+    if (m.imageUrl) {
+      return {
+        role: m.role,
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: m.imageUrl.split(',')[1] } },
+          { type: 'text', text: m.content || 'What did I eat here? Estimate protein.' }
+        ]
+      };
+    }
+    return { role: m.role, content: m.content };
+  });
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: apiMessages,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      showToast('Invalid API key — check settings ⚙️', 3000);
+      throw new Error('Invalid API key');
+    }
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.content?.find(b => b.type === 'text')?.text || 'No response received.';
+}
+
+// ── Send Message ───────────────────────────────────────────────
+async function sendMsg(type) {
+  const isCoach = type === 'coach';
+  const inputId = isCoach ? 'coach-input' : 'nut-input';
+  const chatId = isCoach ? 'coach-chat' : 'nut-chat';
+  const btnId = isCoach ? 'coach-send' : 'nut-send';
+  const msgs = isCoach ? coachMessages : nutritionMessages;
+
+  const input = document.getElementById(inputId);
+  const text = input.value.trim();
+  const hasPhoto = !isCoach && pendingPhoto;
+
+  if (!text && !hasPhoto) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById(btnId).disabled = true;
+
+  const userEntry = {
+    role: 'user',
+    content: text || (hasPhoto ? '' : ''),
+    imageUrl: hasPhoto ? pendingPhoto : null,
+  };
+  msgs.push(userEntry);
+
+  const container = document.getElementById(chatId);
+  appendMessage(container, 'user', userEntry.content, userEntry.imageUrl);
+
+  if (hasPhoto) {
+    pendingPhoto = null;
+    document.getElementById('photo-preview').style.display = 'none';
+    document.getElementById('photo-preview').src = '';
+  }
+
+  showTyping(chatId);
+
+  try {
+    const reply = await callAPI(msgs, isCoach ? buildCoachSystemPrompt() : NUTRITION_SYSTEM_PROMPT);
+    removeTyping(chatId);
+    msgs.push({ role: 'assistant', content: reply });
+    appendMessage(container, 'assistant', reply);
+  } catch (e) {
+    removeTyping(chatId);
+    const errMsg = e.message === 'Invalid API key'
+      ? 'API key issue — tap ⚙️ to update.'
+      : 'Connection error — check your signal and try again.';
+    appendMessage(container, 'assistant', errMsg);
+  }
+
+  document.getElementById(btnId).disabled = false;
+}
+
+function sendQuick(type, text) {
+  const id = type === 'coach' ? 'coach-input' : 'nut-input';
+  document.getElementById(id).value = text;
+  sendMsg(type);
+}
+
+// ── Photo Handling ─────────────────────────────────────────────
+function handlePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Resize large photos to reduce API payload
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 1024;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        const ratio = Math.min(maxDim / w, maxDim / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      pendingPhoto = canvas.toDataURL('image/jpeg', 0.85);
+
+      const preview = document.getElementById('photo-preview');
+      preview.src = pendingPhoto;
+      preview.style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// ── Workout Log ────────────────────────────────────────────────
+function renderLog() {
+  const list = document.getElementById('session-list');
+  list.innerHTML = '';
+
+  [...workoutLog].reverse().forEach((s, reverseIdx) => {
+    const realIdx = workoutLog.length - 1 - reverseIdx;
+    const ph = PHASES.find(p => p.key === s.phase);
+    const item = document.createElement('div');
+    item.className = 'session-item';
+    item.innerHTML = `
+      <div class="s-dot ${s.phase}"></div>
+      <div class="s-info">
+        <div class="s-name">${s.type}</div>
+        <div class="s-details">Week ${getWeekForDate(s.date)} · ${ph?.name || s.phase}${s.energy ? ` · Energy ${s.energy}/5` : ''}</div>
+        ${s.notes ? `<div class="s-notes">${s.notes}</div>` : ''}
+      </div>
+      <div class="s-date">${formatDate(s.date)}</div>
+      <button class="s-delete" onclick="deleteSession(${realIdx})" title="Delete">×</button>`;
+    list.appendChild(item);
+  });
+}
+
+function deleteSession(idx) {
+  if (!confirm('Delete this session?')) return;
+  workoutLog.splice(idx, 1);
+  localStorage.setItem('incaLog5', JSON.stringify(workoutLog));
+  updateLastSession();
+  renderLog();
+  showToast('Session deleted');
+}
+
+function selEnergy(n) {
+  selectedEnergy = n;
+  document.querySelectorAll('.e-btn').forEach((b, i) => b.classList.toggle('sel', i + 1 === n));
+}
+
+function submitLog() {
+  const type = document.getElementById('log-type').value;
+  const notes = document.getElementById('log-notes').value.trim();
+  const phase = PHASES[getCurrentPhaseIndex()].key;
+  const date = getToday().toISOString().slice(0, 10);
+
+  workoutLog.push({ date, type, phase, energy: selectedEnergy, notes });
+  localStorage.setItem('incaLog5', JSON.stringify(workoutLog));
+
+  document.getElementById('log-notes').value = '';
+  selectedEnergy = null;
+  document.querySelectorAll('.e-btn').forEach(b => b.classList.remove('sel'));
+
+  updateLastSession();
+  renderLog();
+  showToast('Session logged ✓');
+}
+
+// ── Misc ───────────────────────────────────────────────────────
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
